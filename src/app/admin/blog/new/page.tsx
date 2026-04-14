@@ -1,0 +1,233 @@
+'use client';
+
+import { useState } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import TiptapLink from '@tiptap/extension-link';
+import Placeholder from '@tiptap/extension-placeholder';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import NextLink from 'next/link';
+import { LockClosedIcon } from '@heroicons/react/24/outline';
+
+function ToolbarBtn({
+  label,
+  onClick,
+  active,
+}: {
+  label: string;
+  onClick: () => void;
+  active?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-3 py-1.5 text-sm font-medium rounded transition-colors ${
+        active ? 'bg-teal-600 text-white' : 'text-gray-700 hover:bg-gray-100'
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+const CATEGORIES = ['Burnout & Stress', 'Family Medicine', 'Public Speaking', 'Workplace Wellness'];
+
+export default function NewBlogPostPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      TiptapLink.configure({ openOnClick: false }),
+      Placeholder.configure({ placeholder: 'Write your article here...' }),
+    ],
+    content: '',
+    editorProps: {
+      attributes: {
+        class: 'min-h-[400px] focus:outline-none prose prose-lg max-w-none p-6',
+      },
+    },
+  });
+
+  const handleSave = async () => {
+    if (!title.trim() || !editor?.getHTML()) {
+      setSaveError('Please add a title and content before saving.');
+      return;
+    }
+    setSaving(true);
+    setSaveError('');
+    try {
+      const { getFirebaseDb } = await import('@/lib/firebase');
+      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+      const db = await getFirebaseDb();
+      await addDoc(collection(db, 'posts'), {
+        title,
+        category,
+        content: editor.getHTML(),
+        author: user?.email ?? 'Dr. Alexandra Alexandru',
+        createdAt: serverTimestamp(),
+        slug: title
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9-]/g, ''),
+      });
+      setSaved(true);
+      setTimeout(() => router.push('/blog'), 1500);
+    } catch (err) {
+      setSaveError(
+        'Could not save. Firebase may not be configured — check your .env.local file.'
+      );
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="max-w-md text-center bg-white rounded-2xl p-10 shadow-sm border border-gray-100">
+          <LockClosedIcon className="w-12 h-12 text-teal-300 mx-auto mb-4" />
+          <h1 className="text-2xl font-black text-gray-900 mb-3">Admin Access Required</h1>
+          <p className="text-gray-600 mb-6">Please sign in to access the blog editor.</p>
+          <NextLink
+            href="/auth/login"
+            className="block py-3 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition-colors"
+          >
+            Sign In
+          </NextLink>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-10">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-black text-gray-900">New Blog Post</h1>
+            <p className="text-sm text-gray-500 mt-1">Writing as {user.email}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <NextLink
+              href="/blog"
+              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg transition-colors"
+            >
+              Cancel
+            </NextLink>
+            <button
+              onClick={handleSave}
+              disabled={saving || saved}
+              className="px-6 py-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 text-sm"
+            >
+              {saved ? 'Saved! Redirecting...' : saving ? 'Saving...' : 'Publish Post'}
+            </button>
+          </div>
+        </div>
+
+        {saveError && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+            {saveError}
+          </div>
+        )}
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Post title..."
+              className="w-full text-3xl font-black text-gray-900 placeholder-gray-300 focus:outline-none"
+            />
+          </div>
+
+          <div className="px-6 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-4 text-sm">
+            <label className="text-gray-600 font-medium">Category:</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+
+          {editor && (
+            <div className="px-6 py-2 border-b border-gray-100 flex flex-wrap gap-1 bg-gray-50">
+              <ToolbarBtn
+                label="Bold"
+                onClick={() => editor.chain().focus().toggleBold().run()}
+                active={editor.isActive('bold')}
+              />
+              <ToolbarBtn
+                label="Italic"
+                onClick={() => editor.chain().focus().toggleItalic().run()}
+                active={editor.isActive('italic')}
+              />
+              <ToolbarBtn
+                label="H2"
+                onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                active={editor.isActive('heading', { level: 2 })}
+              />
+              <ToolbarBtn
+                label="H3"
+                onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+                active={editor.isActive('heading', { level: 3 })}
+              />
+              <ToolbarBtn
+                label="• List"
+                onClick={() => editor.chain().focus().toggleBulletList().run()}
+                active={editor.isActive('bulletList')}
+              />
+              <ToolbarBtn
+                label="1. List"
+                onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                active={editor.isActive('orderedList')}
+              />
+              <ToolbarBtn
+                label="Quote"
+                onClick={() => editor.chain().focus().toggleBlockquote().run()}
+                active={editor.isActive('blockquote')}
+              />
+              <ToolbarBtn
+                label="Undo"
+                onClick={() => editor.chain().focus().undo().run()}
+              />
+              <ToolbarBtn
+                label="Redo"
+                onClick={() => editor.chain().focus().redo().run()}
+              />
+            </div>
+          )}
+
+          <EditorContent editor={editor} />
+        </div>
+
+        <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100 text-sm text-blue-700">
+          <strong>Note:</strong> Posts are saved to Firestore. Ensure your{' '}
+          <code>.env.local</code> is configured with Firebase credentials before publishing.
+        </div>
+      </div>
+    </div>
+  );
+}
