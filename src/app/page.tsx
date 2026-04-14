@@ -187,7 +187,7 @@ export default function HomePage() {
               </div>
               <div className="absolute top-4 right-4 bg-white rounded-2xl shadow-lg p-4 border border-gray-100 max-w-xs hidden lg:block">
                 <p className="text-xs text-gray-500 mb-1">Mission</p>
-                <p className="text-sm font-medium text-gray-800">"Making healthcare and wellbeing accessible for everyone."</p>
+                <p className="text-sm font-medium text-gray-800">&ldquo;Making healthcare and wellbeing accessible for everyone.&rdquo;</p>
               </div>
             </div>
             <div>
@@ -240,7 +240,7 @@ export default function HomePage() {
                     <StarIcon key={i} className="w-5 h-5 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
-                <p className="text-gray-700 italic leading-relaxed mb-6">"{t.quote}"</p>
+                <p className="text-gray-700 italic leading-relaxed mb-6">&ldquo;{t.quote}&rdquo;</p>
                 <div>
                   <p className="font-semibold text-gray-900">{t.name}</p>
                   <p className="text-sm text-gray-500">{t.role}</p>

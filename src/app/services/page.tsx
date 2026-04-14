@@ -173,7 +173,7 @@ export default function ServicesPage() {
       <section className="py-16 bg-gradient-to-r from-teal-600 to-blue-600">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-black text-white mb-4">Not Sure Which Service Is Right for You?</h2>
-          <p className="text-teal-100 mb-8">Book a free 15-minute discovery call and we'll find the best fit together.</p>
+          <p className="text-teal-100 mb-8">Book a free 15-minute discovery call and we&apos;ll find the best fit together.</p>
           <Link href="/auth/register" className="inline-flex items-center gap-2 px-8 py-4 bg-white text-teal-600 font-bold rounded-xl hover:bg-gray-50 transition-colors shadow-lg">
             Book Free Discovery Call <ArrowRightIcon className="w-4 h-4" />
           </Link>

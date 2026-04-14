@@ -148,7 +148,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-black text-gray-900 mb-4">Ready to Work Together?</h2>
           <p className="text-gray-600 mb-8 max-w-xl mx-auto">
-            Whether for personal healthcare or professional development, let's start a conversation.
+            Whether for personal healthcare or professional development, let&apos;s start a conversation.
           </p>
           <Link href="/services" className="inline-flex items-center gap-2 px-8 py-4 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition-colors">
             View Services <ArrowRightIcon className="w-4 h-4" />
