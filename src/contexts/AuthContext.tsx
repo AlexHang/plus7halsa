@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { firebaseConfig, getFirebaseApp } from '@/lib/firebase';
 
 interface User {
   email: string | null;
@@ -23,9 +24,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Only initialize Firebase on the client when config is available
-    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-    if (!apiKey) {
+    // Skip if Firebase is not configured (no API key)
+    if (!firebaseConfig.apiKey) {
       setLoading(false);
       return;
     }
@@ -34,21 +34,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     (async () => {
       try {
-        const { initializeApp, getApps } = await import('firebase/app');
         const { getAuth, onAuthStateChanged } = await import('firebase/auth');
-
-        const firebaseConfig = {
-          apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
-          authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
-          projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '',
-          storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
-          messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
-          appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '',
-        };
-
-        const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+        const app = await getFirebaseApp();
         const auth = getAuth(app);
-
         unsubscribe = onAuthStateChanged(auth, (u) => {
           setUser(u ? { email: u.email, uid: u.uid } : null);
           setLoading(false);
@@ -61,44 +49,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe?.();
   }, []);
 
-  const getFirebaseAuth = async () => {
-    const { initializeApp, getApps } = await import('firebase/app');
-    const { getAuth } = await import('firebase/auth');
-    const firebaseConfig = {
-      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
-      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '',
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
-      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
-      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '',
-    };
-    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-    return getAuth(app);
+  const getAuth = async () => {
+    const { getAuth: firebaseGetAuth } = await import('firebase/auth');
+    return firebaseGetAuth(await getFirebaseApp());
   };
 
   const signIn = async (email: string, password: string) => {
     const { signInWithEmailAndPassword } = await import('firebase/auth');
-    const auth = await getFirebaseAuth();
-    await signInWithEmailAndPassword(auth, email, password);
+    await signInWithEmailAndPassword(await getAuth(), email, password);
   };
 
   const signUp = async (email: string, password: string) => {
     const { createUserWithEmailAndPassword } = await import('firebase/auth');
-    const auth = await getFirebaseAuth();
-    await createUserWithEmailAndPassword(auth, email, password);
+    await createUserWithEmailAndPassword(await getAuth(), email, password);
   };
 
   const signInWithGoogle = async () => {
     const { GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
-    const auth = await getFirebaseAuth();
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    await signInWithPopup(await getAuth(), new GoogleAuthProvider());
   };
 
   const logout = async () => {
     const { signOut } = await import('firebase/auth');
-    const auth = await getFirebaseAuth();
-    await signOut(auth);
+    await signOut(await getAuth());
   };
 
   return (
