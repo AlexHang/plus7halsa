@@ -44,6 +44,7 @@ export default function NewBlogPostPage() {
   const [saveError, setSaveError] = useState('');
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       TiptapLink.configure({ openOnClick: false }),
