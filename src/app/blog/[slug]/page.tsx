@@ -1,115 +1,83 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { ArrowLeftIcon, CalendarIcon } from '@heroicons/react/24/outline';
 
-const posts: Record<string, {
+interface Post {
+  id: string;
   title: string;
   date: string;
   category: string;
   author: string;
-  image: string;
+  coverImage?: string;
   content: string;
-}> = {
-  'recognising-burnout-early-signs': {
-    title: '7 Early Warning Signs of Burnout You Should Never Ignore',
-    date: '2024-12-10',
-    category: 'Burnout & Stress',
-    author: 'Dr. Alexandra Alexandru',
-    image: 'https://images.unsplash.com/photo-1493836512294-502baa1986e2?w=1200&h=600&fit=crop',
-    content: `
-      Burnout rarely appears overnight. It is a gradual process that builds over weeks, months, and 
-      sometimes years. The challenge is that many of its early symptoms mimic other conditions — 
-      or are simply dismissed as "just stress."
-
-      Here are seven warning signs that deserve your attention:
-
-      **1. Persistent Exhaustion That Sleep Doesn't Fix**
-      When you wake up feeling just as tired as when you went to bed, something deeper is happening. 
-      This is not ordinary fatigue — it is the hallmark of burnout.
-
-      **2. Increased Cynicism and Detachment**
-      If you find yourself growing cynical about work, colleagues, or your purpose — where you once 
-      felt engaged — this emotional detachment is a key burnout indicator.
-
-      **3. Reduced Professional Efficacy**
-      Tasks that were once straightforward now feel overwhelming. You question your abilities and 
-      decisions in ways you never did before.
-
-      **4. Physical Symptoms Without Clear Cause**
-      Headaches, muscle tension, gastrointestinal issues, and frequent illness. Burnout is not 
-      just psychological — it manifests physically.
-
-      **5. Difficulty Concentrating**
-      A persistent "brain fog" that makes it hard to focus, remember details, or make decisions.
-
-      **6. Emotional Dysregulation**
-      Irritability, unexpected tearfulness, or feeling emotionally numb. Your usual coping 
-      mechanisms stop working.
-
-      **7. Social Withdrawal**
-      Avoiding friends, family, and social activities — even ones you previously enjoyed.
-
-      **What to Do**
-      
-      If you recognise three or more of these signs, it is time to seek support. Burnout is treatable, 
-      but the earlier it is addressed, the better the outcomes. Reach out to your GP, consider therapy, 
-      and explore our burnout prevention webinars.
-    `,
-  },
-  'family-medicine-preventive-care': {
-    title: 'Why Preventive Care is the Most Powerful Medicine',
-    date: '2024-11-28',
-    category: 'Family Medicine',
-    author: 'Dr. Alexandra Alexandru',
-    image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1200&h=600&fit=crop',
-    content: `
-      In medicine, we often speak about treatment — but the most transformative interventions 
-      happen before illness even takes hold. Preventive care is not merely a health system 
-      strategy; it is the single most effective way to live a longer, healthier life.
-
-      **The Statistics Are Clear**
-      
-      According to the World Health Organisation, up to 80% of premature heart disease and stroke, 
-      and over 40% of cancers, could be prevented through lifestyle changes and early intervention. 
-      Preventive care is not a luxury — it is essential medicine.
-
-      **What Does a Good Preventive Check-Up Include?**
-
-      A comprehensive annual health review should address:
-      - Blood pressure and cholesterol screening
-      - Blood glucose monitoring
-      - BMI and body composition assessment
-      - Cancer screenings (age and gender appropriate)
-      - Mental health screening
-      - Vaccination review
-      - Personalised lifestyle counselling
-
-      **The Family Medicine Advantage**
-      
-      Family physicians are uniquely placed to provide preventive care because we know your whole 
-      history. We can spot patterns across years and connect symptoms that a specialist might miss 
-      in isolation. That continuous relationship is one of the most valuable assets in healthcare.
-
-      Schedule your annual check-up today — it could be the most important hour you spend this year.
-    `,
-  },
-};
-
-export function generateStaticParams() {
-  return Object.keys(posts).map((slug) => ({ slug }));
 }
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = posts[params.slug];
-  if (!post) notFound();
+const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1200&h=600&fit=crop';
+
+export default function BlogPostPage() {
+  const params = useParams<{ slug: string }>();
+  const slug = params?.slug ?? '';
+  const [post, setPost] = useState<Post | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [missing, setMissing] = useState(false);
+
+  useEffect(() => {
+    if (!slug) return;
+    (async () => {
+      try {
+        const { getFirebaseDb } = await import('@/lib/firebase');
+        const { collection, getDocs, query, where, limit } = await import('firebase/firestore');
+        const db = await getFirebaseDb();
+        const q = query(collection(db, 'posts'), where('slug', '==', slug), limit(1));
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) {
+          setMissing(true);
+          return;
+        }
+        const doc = snapshot.docs[0];
+        const data = doc.data();
+        const ts = data.createdAt;
+        const date = ts?.toDate
+          ? ts.toDate().toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0];
+        setPost({
+          id: doc.id,
+          title: data.title ?? '',
+          date,
+          category: data.category ?? '',
+          author: data.author ?? '',
+          coverImage: data.coverImage,
+          content: data.content ?? '',
+        });
+      } catch (err) {
+        console.error('Failed to fetch post:', err);
+        setMissing(true);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (missing || !post) return notFound();
 
   return (
     <div>
       {/* Header Image */}
       <div className="relative h-64 md:h-96 w-full">
         <Image
-          src={post.image}
+          src={post.coverImage || PLACEHOLDER_IMAGE}
           alt={post.title}
           fill
           className="object-cover"
@@ -145,24 +113,10 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
           </div>
         </div>
 
-        <article className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
-          {post.content.split('\n\n').map((para, i) => {
-            if (para.startsWith('**') && para.endsWith('**')) {
-              return <h2 key={i} className="text-2xl font-bold text-gray-900 mt-8 mb-4">{para.replace(/\*\*/g, '')}</h2>;
-            }
-            if (para.trim().startsWith('- ')) {
-              return (
-                <ul key={i} className="list-disc pl-6 space-y-2 my-4">
-                  {para.split('\n').filter(l => l.trim().startsWith('- ')).map((item, j) => (
-                    <li key={j} className="text-gray-600">{item.replace('- ', '')}</li>
-                  ))}
-                </ul>
-              );
-            }
-            const formatted = para.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            return <p key={i} className="mb-4" dangerouslySetInnerHTML={{ __html: formatted }} />;
-          })}
-        </article>
+        <article
+          className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: post.content }}
+        />
 
         <div className="mt-12 p-6 bg-teal-50 rounded-2xl border border-teal-100">
           <p className="font-semibold text-teal-800 mb-2">Found this article helpful?</p>
@@ -182,3 +136,4 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
     </div>
   );
 }
+
