@@ -41,7 +41,7 @@ export default function AboutPage() {
             <div className="relative flex justify-center">
               <div className="w-80 h-96 rounded-3xl overflow-hidden shadow-2xl">
                 <Image
-                  src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=640&h=800&fit=crop&crop=face"
+                  src="profile-pic.jpg"
                   alt="Dr. Alexandra Alexandru"
                   width={640}
                   height={800}
