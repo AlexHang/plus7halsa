@@ -107,7 +107,7 @@ export default function HomePage() {
             <div className="relative flex justify-center lg:justify-end">
               <div className="relative w-80 h-96 rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-br from-teal-100 to-blue-100 flex items-center justify-center">
                 <Image
-                  src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=640&h=800&fit=crop&crop=face"
+                  src="/profile-pic.jpg"
                   alt="Dr. Alexandra Alexandru"
                   fill
                   className="object-cover"
@@ -178,16 +178,12 @@ export default function HomePage() {
             <div className="relative">
               <div className="w-full aspect-square max-w-md mx-auto rounded-3xl overflow-hidden shadow-xl bg-gradient-to-br from-teal-100 to-blue-100">
                 <Image
-                  src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=640&h=640&fit=crop&crop=face"
+                  src="/profile-pic.jpg"
                   alt="Dr. Alexandra Alexandru - Family Doctor"
                   width={640}
                   height={640}
                   className="object-cover w-full h-full"
                 />
-              </div>
-              <div className="absolute top-4 right-4 bg-white rounded-2xl shadow-lg p-4 border border-gray-100 max-w-xs hidden lg:block">
-                <p className="text-xs text-gray-500 mb-1">Mission</p>
-                <p className="text-sm font-medium text-gray-800">&ldquo;Making healthcare and wellbeing accessible for everyone.&rdquo;</p>
               </div>
             </div>
             <div>
