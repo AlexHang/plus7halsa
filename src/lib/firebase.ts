@@ -17,7 +17,7 @@ export async function getFirebaseApp() {
 
 export async function getFirebaseDb() {
   const { getFirestore } = await import('firebase/firestore');
-  return getFirestore(await getFirebaseApp());
+  return getFirestore(await getFirebaseApp(), 'plus7halsa-firestore');
 }
 
 export async function getFirebaseStorage() {
